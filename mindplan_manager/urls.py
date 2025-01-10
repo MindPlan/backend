@@ -1,7 +1,7 @@
 from django.urls import path
 
-app_name = "mindplan_manager"
+app_name = "mindplan"
 
 urlpatterns = [
-    path()
+    # path()
 ]
