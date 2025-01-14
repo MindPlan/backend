@@ -27,7 +27,7 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
 class GoogleView(APIView):
     """
-    Ендпоїнт для верифікації Google ID токена
+    Endpoint for Google ID token verification
     """
     def post(self, request):
         token = request.data.get("credential")
@@ -36,21 +36,21 @@ class GoogleView(APIView):
             return Response({"message": "Token and clientId are required."}, status=HTTP_400_BAD_REQUEST)
 
         try:
-            # Верифікація Google ID токена
+            # Google ID token verification
             idinfo = id_token.verify_oauth2_token(
                 token,
                 requests.Request(),
                 client_id
             )
 
-            # Перевіряємо, чи токен виданий Google
+            # Checking if the token was issued by Google
             if idinfo["iss"] not in ["accounts.google.com", "https://accounts.google.com"]:
                 return Response({"message": "Invalid token issuer."}, status=HTTP_400_BAD_REQUEST)
 
         except ValueError as e:
             return Response({"message": f"Invalid or expired token: {str(e)}"}, status=HTTP_400_BAD_REQUEST)
 
-        # Отримуємо дані з токена
+        # Getting data from the token
         email = idinfo.get("email")
         first_name = idinfo["given_name"]
         last_name = idinfo.get("family_name")
@@ -58,7 +58,7 @@ class GoogleView(APIView):
         if not email:
             return Response({"message": "Email is required."}, status=HTTP_400_BAD_REQUEST)
 
-        # Створюємо або отримуємо користувача
+        # Create or get a user
         user, created = User.objects.get_or_create(
             email=email,
             defaults={
@@ -68,12 +68,12 @@ class GoogleView(APIView):
         )
 
         if not created:
-            # Оновлюємо існуючого користувача
+            # Updating an existing user
             user.first_name = first_name or user.first_name
             user.last_name = last_name or user.last_name
             user.save()
 
-        # Генеруємо JWT токени
+        # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         response = {
             "username": user.username,
