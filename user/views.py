@@ -42,7 +42,6 @@ class GoogleView(APIView):
                 requests.Request(),
                 client_id
             )
-            print(idinfo)
 
             # Перевіряємо, чи токен виданий Google
             if idinfo["iss"] not in ["accounts.google.com", "https://accounts.google.com"]:
@@ -54,9 +53,7 @@ class GoogleView(APIView):
         # Отримуємо дані з токена
         email = idinfo.get("email")
         first_name = idinfo["given_name"]
-        print(first_name)
         last_name = idinfo.get("family_name")
-        print(last_name)
 
         if not email:
             return Response({"message": "Email is required."}, status=HTTP_400_BAD_REQUEST)
