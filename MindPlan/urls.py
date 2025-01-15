@@ -21,6 +21,6 @@ from debug_toolbar.toolbar import debug_toolbar_urls
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/user/", include("user.urls", namespace="user")),
+    path("auth/", include("user.urls", namespace="user")),
     path("api/mindplan/", include("mindplan_manager.urls", namespace="mindplan")),
 ] + debug_toolbar_urls()

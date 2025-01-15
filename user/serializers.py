@@ -7,7 +7,14 @@ class UserSerializer(serializers.ModelSerializer):
         model = get_user_model()
         fields = ("id", "email", "password", "is_staff", "is_email_verified")
         read_only_fields = ("is_staff", "is_email_verified")
-        extra_kwargs = {"password": {"write_only": True, "min_length": 5}}
+        extra_kwargs = {
+            "password": {
+                "write_only": True,
+                "min_length": 5,
+                "style": {"input_type": "password"}
+
+            }
+        }
 
     def create(self, validated_data):
         """Create a new user with encrypted password and return it"""

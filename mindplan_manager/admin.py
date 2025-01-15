@@ -1,8 +1,6 @@
 from django.contrib import admin
-
-import MindPlan
-from .models import Task
+from .models import Task, Group
 
 
 admin.site.register(Task)
-
+admin.site.register(Group)

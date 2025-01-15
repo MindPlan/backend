@@ -4,7 +4,7 @@ from django.utils.http import urlsafe_base64_decode
 from google.auth.transport import requests
 from google.oauth2 import id_token
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
@@ -19,7 +19,7 @@ from user.utils import send_verification_email
 
 class CreateUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
-
+    permission_classes = (AllowAny,)
     def perform_create(self, serializer):
         user = serializer.save()
         send_verification_email(user, self.request)
@@ -96,6 +96,9 @@ class GoogleView(APIView):
 
 
 class VerifyEmailView(APIView):
+
+    permission_classes = (AllowAny,)
+
     def get(self, request, uidb64, token):
         try:
             uid = urlsafe_base64_decode(uidb64).decode()

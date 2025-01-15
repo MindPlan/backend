@@ -10,7 +10,7 @@ def send_verification_email(user, request):
     """
     token = default_token_generator.make_token(user)
     uid = urlsafe_base64_encode(force_bytes(user.pk))
-    verification_link = f"{request.scheme}://{request.get_host()}/api/user/verify-email/{uid}/{token}/"
+    verification_link = f"{request.scheme}://{request.get_host()}/auth/verify-email/{uid}/{token}/"
 
     subject = "Email Verification"
     message = f"""

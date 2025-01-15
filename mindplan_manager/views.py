@@ -1,22 +1,34 @@
 from rest_framework import mixins
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from mindplan_manager.serializers import TaskSerializer
+from mindplan_manager.models import Group, Task
+from mindplan_manager.serializers import TaskSerializer, GroupSerializer
 
 
 class TaskViewSet(
-    mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.DestroyModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
+    ModelViewSet,
 ):
     serializer_class = TaskSerializer
-    queryset = TaskSerializer.Meta.model.objects.all()
+    queryset = Task.objects.all()
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        return self.queryset.filter(owner=self.request.user)
+        return Task.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+
+class GroupViewSet(
+    ModelViewSet,
+):
+    serializer_class = GroupSerializer
+    queryset = Group.objects.all()
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        return Group.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)

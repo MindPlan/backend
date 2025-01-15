@@ -27,6 +27,7 @@ class Task(models.Model):
     )
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
+    group = models.ManyToManyField("Group", related_name="tasks", blank=True,)
     member = models.ForeignKey(
         AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -87,4 +88,12 @@ class Comment(models.Model):
 class Group(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(max_length=500, blank=True, null=True)
-    tasks = models.ManyToManyField(Task, related_name="groups")
+    owner = models.ForeignKey(
+        AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=False,
+        editable=False
+    )
+
+    def __str__(self):
+        return self.name
