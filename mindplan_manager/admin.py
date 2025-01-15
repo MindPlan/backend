@@ -1,3 +1,8 @@
 from django.contrib import admin
 
-# Register your models here.
+import MindPlan
+from .models import Task
+
+
+admin.site.register(Task)
+

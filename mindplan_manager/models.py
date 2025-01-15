@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.db import models
+from django.http import HttpRequest
 from rest_framework.exceptions import ValidationError
 
 from MindPlan.settings import AUTH_USER_MODEL
@@ -30,8 +32,15 @@ class Task(models.Model):
         on_delete=models.SET_NULL,
         related_name="tasks",
         null=True,
+        blank=True
+
     )
-    owner = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, null=False)
+    owner = models.ForeignKey(
+        AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=False,
+        editable=False
+    )
 
     def clean(self):
         super().clean()
@@ -45,6 +54,8 @@ class Task(models.Model):
             })
 
     def save(self, *args, **kwargs):
+        if not self.pk and not self.owner:
+            self.owner = kwargs.pop("owner", None)
         self.clean()
         super().save(*args, **kwargs)
 
