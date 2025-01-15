@@ -1,3 +1,6 @@
+from django.contrib.auth.tokens import default_token_generator
+from django.shortcuts import get_object_or_404
+from django.utils.http import urlsafe_base64_decode
 from google.auth.transport import requests
 from google.oauth2 import id_token
 from rest_framework import generics
@@ -9,17 +12,24 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from user.models import User
+from user.permissions import IsEmailVerified
 from user.serializers import UserSerializer
+from user.utils import send_verification_email
 
 
 class CreateUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
 
+    def perform_create(self, serializer):
+        user = serializer.save()
+        send_verification_email(user, self.request)
+        return Response({"message": "User created successfully. Please verify your email."})
+
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     authentication_classes = (JWTAuthentication,)
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsEmailVerified)
 
     def get_object(self):
         return self.request.user
@@ -84,3 +94,17 @@ class GoogleView(APIView):
         }
         return Response(response)
 
+
+class VerifyEmailView(APIView):
+    def get(self, request, uidb64, token):
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = get_object_or_404(User, pk=uid)
+        except (TypeError, ValueError, OverflowError):
+            return Response({"message": "Invalid link."}, status=400)
+
+        if default_token_generator.check_token(user, token):
+            user.is_email_verified = True
+            user.save()
+            return Response({"message": "Email successfully verified."})
+        return Response({"message": "Invalid or expired token."}, status=400)
