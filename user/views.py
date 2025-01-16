@@ -39,6 +39,7 @@ class GoogleView(APIView):
     """
     Endpoint for Google ID token verification
     """
+    permission_classes = (AllowAny,)
     def post(self, request):
         token = request.data.get("credential")
         client_id = request.data.get("clientId")

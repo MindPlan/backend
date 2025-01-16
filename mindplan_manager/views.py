@@ -1,6 +1,5 @@
-from rest_framework import mixins
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework.viewsets import ModelViewSet
 
 from mindplan_manager.models import Group, Task
 from mindplan_manager.serializers import TaskSerializer, GroupSerializer

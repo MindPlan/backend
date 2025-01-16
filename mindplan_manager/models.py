@@ -1,12 +1,11 @@
-from django.conf import settings
 from django.db import models
-from django.http import HttpRequest
 from rest_framework.exceptions import ValidationError
 
 from MindPlan.settings import AUTH_USER_MODEL
 
 
 class Task(models.Model):
+
     class Priority(models.TextChoices):
         LOW = "LOW", "Low"
         MEDIUM = "MEDIUM", "Medium"
@@ -43,6 +42,22 @@ class Task(models.Model):
         editable=False
     )
 
+    @staticmethod
+    def validate_group(owner, group, error_to_raise):
+        """
+        Check if a group is owned by an owner.
+        """
+        if not isinstance(group, Group):
+            try:
+                group = Group.objects.get(id=group)
+            except Group.DoesNotExist:
+                raise error_to_raise({"group": f"Group with ID {group} does not exist."})
+
+        if group.owner != owner:
+            raise error_to_raise(
+                {"group": f"The user cannot add this or these groups."}
+            )
+
     def clean(self):
         super().clean()
 
@@ -58,6 +73,7 @@ class Task(models.Model):
         if not self.pk and not self.owner:
             self.owner = kwargs.pop("owner", None)
         self.clean()
+
         super().save(*args, **kwargs)
 
     @property
@@ -68,6 +84,7 @@ class Task(models.Model):
             raise ValidationError({
                 "start_date or end_date": "Date cannot be empty or whitespace."
             })
+
 
 class Comment(models.Model):
     task = models.ForeignKey(
@@ -96,4 +113,4 @@ class Group(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return f"id:({self.id}) {self.name}. Owner id:({self.owner.id})"
