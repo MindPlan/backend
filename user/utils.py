@@ -9,8 +9,7 @@ def send_verification_email(user, request):
     Sends an email to verify your email.
     """
     token = default_token_generator.make_token(user)
-    uid = urlsafe_base64_encode(force_bytes(user.pk))
-    verification_link = f"{request.scheme}://{request.get_host()}/auth/verify-email/{uid}/{token}/"
+    verification_link = f"{request.scheme}://{request.get_host()}/auth/verify-email/{token}/"
 
     subject = "Email Verification"
     message = f"""

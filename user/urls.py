@@ -5,7 +5,13 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView
 )
 
-from user.views import CreateUserView, ManageUserView, GoogleView, VerifyEmailView
+from user.views import (
+    CreateUserView,
+    ManageUserView,
+    GoogleView,
+    VerifyEmailView,
+    ResendVerificationEmailView
+)
 
 app_name = "user"
 
@@ -19,7 +25,8 @@ urlpatterns = [
     path("token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     # GOOGLE TOKEN
     path("google/", GoogleView.as_view(), name="google_auth"),
-
-    path("verify-email/<str:uidb64>/<str:token>/", VerifyEmailView.as_view(), name="verify_email"),
+    # Verification email
+    path("verify-email/<str:token>/", VerifyEmailView.as_view(), name="verify_email"),
+    path("resend-verification-email/", ResendVerificationEmailView.as_view(), name="resend_verification_email")
 
 ]
