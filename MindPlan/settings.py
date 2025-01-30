@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "drf_spectacular_sidecar",
     "rest_framework",
     "debug_toolbar",
+    "mindplan_project_manager",
     "mindplan_manager",
     "user",
 ]
