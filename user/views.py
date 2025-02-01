@@ -1,10 +1,14 @@
+import requests
+
+
 from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from django.utils.http import urlsafe_base64_decode
-from google.auth.transport import requests
+from django.core.files.base import ContentFile
+from django.utils.text import slugify
+from google.auth.transport.requests import Request
 from google.oauth2 import id_token
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
@@ -51,7 +55,7 @@ class GoogleView(APIView):
             # Google ID token verification
             idinfo = id_token.verify_oauth2_token(
                 token,
-                requests.Request(),
+                Request(),
                 client_id
             )
 
@@ -66,6 +70,7 @@ class GoogleView(APIView):
         email = idinfo.get("email")
         first_name = idinfo["given_name"]
         last_name = idinfo.get("family_name")
+        img_url = idinfo.get("picture")
 
         if not email:
             return Response({"message": "Email is required."}, status=HTTP_400_BAD_REQUEST)
@@ -86,6 +91,16 @@ class GoogleView(APIView):
                     user.first_name = first_name
                 if last_name:
                     user.last_name = last_name
+
+            if img_url:
+                response = requests.get(img_url)
+                if response.status_code == 200:
+                    user.image.save(
+                        f"{slugify(user.email)}-google-photo.jpg",
+                        ContentFile(response.content),
+                        save=False
+                    )
+
             # Automatically verify email for Google accounts
             user.is_email_verified = True
             user.save()
@@ -96,6 +111,7 @@ class GoogleView(APIView):
             "username": user.username,
             "first_name": user.first_name,
             "last_name": user.last_name,
+            "image": user.image.url if user.image else None,
             "access_token": str(refresh.access_token),
             "refresh_token": str(refresh),
         }
@@ -144,3 +160,20 @@ class ResendVerificationEmailView(APIView):
             return Response({"message": "Verification email resent."})
         except Exception as e:
             return Response({"message": "Unable to resend email. Please try again later."}, status=400)
+
+
+class LogoutView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

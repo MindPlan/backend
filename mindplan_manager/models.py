@@ -108,7 +108,7 @@ class Group(models.Model):
     owner = models.ForeignKey(
         AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        null=False,
+        null=True,
         editable=False
     )
 

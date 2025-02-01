@@ -10,7 +10,8 @@ from user.views import (
     ManageUserView,
     GoogleView,
     VerifyEmailView,
-    ResendVerificationEmailView
+    ResendVerificationEmailView,
+    LogoutView
 )
 
 app_name = "user"
@@ -23,6 +24,7 @@ urlpatterns = [
     path("sign-in/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("token/verify/", TokenVerifyView.as_view(), name="token_verify"),
+    path("token/logout/", LogoutView.as_view(), name="logout"),
     # GOOGLE TOKEN
     path("google/", GoogleView.as_view(), name="google_auth"),
     # Verification email
