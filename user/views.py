@@ -6,9 +6,9 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.core.files.base import ContentFile
 from django.utils.text import slugify
-from google.auth.transport import requests
+from google.auth.transport.requests import Request
 from google.oauth2 import id_token
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.status import HTTP_400_BAD_REQUEST
@@ -55,7 +55,7 @@ class GoogleView(APIView):
             # Google ID token verification
             idinfo = id_token.verify_oauth2_token(
                 token,
-                requests.Request(),
+                Request(),
                 client_id
             )
 
@@ -160,3 +160,20 @@ class ResendVerificationEmailView(APIView):
             return Response({"message": "Verification email resent."})
         except Exception as e:
             return Response({"message": "Unable to resend email. Please try again later."}, status=400)
+
+
+class LogoutView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
