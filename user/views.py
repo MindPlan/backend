@@ -19,7 +19,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from user.models import User
 from user.permissions import IsEmailVerified
 from user.serializers import UserSerializer
-from user.utils import send_verification_email
+from user.utils import send_verification_email, send_reset_password_email
 
 
 class CreateUserView(generics.CreateAPIView):
@@ -142,6 +142,26 @@ class VerifyEmailView(APIView):
             return Response({"message": "Invalid link."}, status=400)
 
 
+class PasswordResetView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        email = request.data.get("email")
+        if not email:
+            return Response(
+                {"error": "Email is required."},
+                status=HTTP_400_BAD_REQUEST
+            )
+        try:
+            user = User.objects.get(email=email)
+            send_reset_password_email(user, request)
+            return Response({"message": "Password reset email sent."}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "User with this email does not exist."}, status=HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=HTTP_400_BAD_REQUEST)
+
+
 class ResendVerificationEmailView(APIView):
 
     permission_classes = (AllowAny,)
@@ -160,6 +180,34 @@ class ResendVerificationEmailView(APIView):
             return Response({"message": "Verification email resent."})
         except Exception as e:
             return Response({"message": "Unable to resend email. Please try again later."}, status=400)
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request, token):
+        new_password = request.data.get("new_password")
+        confirm_password = request.data.get("confirm_password")
+
+        if not new_password or not confirm_password:
+            return Response({"error": "Both password fields are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if new_password != confirm_password:
+            return Response({"error": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = None
+        for candidate_user in User.objects.all():
+            if default_token_generator.check_token(candidate_user, token):
+                user = candidate_user
+                break
+
+        if not user:
+            return Response({"error": "Invalid or expired token."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({"message": "Password has been reset successfully."}, status=status.HTTP_200_OK)
 
 
 class LogoutView(APIView):

@@ -25,3 +25,24 @@ def send_verification_email(user, request):
         [user.email],
         fail_silently=False,
     )
+
+
+def send_reset_password_email(user, request):
+    token = default_token_generator.make_token(user)
+    reset_password_link = f"{request.scheme}://{request.get_host()}/auth/password-reset-confirm/{token}/"
+    subject = "Rest Password"
+    message = f"""
+    Hi {user.email},
+    Click the link below to reset your password:
+    {reset_password_link}
+    If you did not request this, please ignore this email.
+    """
+
+    send_mail(
+        subject,
+        message,
+        "your_email@gmail.com",
+        [user.email],
+        fail_silently=False,
+    )
+
