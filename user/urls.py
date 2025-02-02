@@ -11,7 +11,9 @@ from user.views import (
     GoogleView,
     VerifyEmailView,
     ResendVerificationEmailView,
-    LogoutView
+    LogoutView,
+    PasswordResetView,
+    PasswordResetConfirmView
 )
 
 app_name = "user"
@@ -29,6 +31,9 @@ urlpatterns = [
     path("google/", GoogleView.as_view(), name="google_auth"),
     # Verification email
     path("verify-email/<str:token>/", VerifyEmailView.as_view(), name="verify_email"),
-    path("resend-verification-email/", ResendVerificationEmailView.as_view(), name="resend_verification_email")
+    path("resend-verification-email/", ResendVerificationEmailView.as_view(), name="resend_verification_email"),
+    # RESET PASSWORD
+    path("password-reset/", PasswordResetView.as_view(), name="password-reset"),
+    path("password-reset-confirm/<str:token>/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
 
 ]
