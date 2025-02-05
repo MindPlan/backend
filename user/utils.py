@@ -29,7 +29,8 @@ def send_verification_email(user, request):
 
 def send_reset_password_email(user, request):
     token = default_token_generator.make_token(user)
-    reset_password_link = f"{request.scheme}://{request.get_host()}/auth/password-reset-confirm/{token}/"
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    reset_password_link = f"{request.scheme}://{request.get_host()}/auth/password-reset-confirm/{uid}/{token}/"
     subject = "Rest Password"
     message = f"""
     Hi {user.email},

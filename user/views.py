@@ -6,6 +6,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.core.files.base import ContentFile
 from django.utils.text import slugify
+from django.utils.http import urlsafe_base64_decode
 from google.auth.transport.requests import Request
 from google.oauth2 import id_token
 from rest_framework import generics, status
@@ -153,7 +154,10 @@ class PasswordResetView(APIView):
                 status=HTTP_400_BAD_REQUEST
             )
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.filter(email=email).first()
+            if not user:
+                return Response({"error": "User with this email does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+
             send_reset_password_email(user, request)
             return Response({"message": "Password reset email sent."}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
@@ -185,9 +189,12 @@ class ResendVerificationEmailView(APIView):
 class PasswordResetConfirmView(APIView):
     permission_classes = (AllowAny,)
 
-    def post(self, request, token):
+    def post(self, request, token, uidb64):
         new_password = request.data.get("new_password")
         confirm_password = request.data.get("confirm_password")
+
+        if not uidb64 or not token:
+            return Response({"error": "UID and token are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         if not new_password or not confirm_password:
             return Response({"error": "Both password fields are required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -195,13 +202,13 @@ class PasswordResetConfirmView(APIView):
         if new_password != confirm_password:
             return Response({"error": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = None
-        for candidate_user in User.objects.all():
-            if default_token_generator.check_token(candidate_user, token):
-                user = candidate_user
-                break
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User.objects.get(pk=uid)
+        except (User.DoesNotExist, ValueError, TypeError):
+            return Response({"error": "Invalid UID."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not user:
+        if not default_token_generator.check_token(user, token):
             return Response({"error": "Invalid or expired token."}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
