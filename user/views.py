@@ -17,6 +17,9 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
+
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
+
 from user.models import User
 from user.permissions import IsEmailVerified
 from user.serializers import UserSerializer
@@ -46,6 +49,60 @@ class GoogleView(APIView):
     Endpoint for Google ID token verification
     """
     permission_classes = (AllowAny,)
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(
+                description="User successfully authenticated with Google",
+                examples=[
+                    OpenApiExample(
+                        "Success",
+                        value={
+                            "username": "johndoe",
+                            "first_name": "John",
+                            "last_name": "Doe",
+                            "image": "http://example.com/path/to/profile-picture.jpg",
+                            "access_token": "JWT_ACCESS_TOKEN",
+                            "refresh_token": "JWT_REFRESH_TOKEN"
+                        }
+                    )
+                ]
+            ),
+            400: OpenApiResponse(
+                description="Bad Request",
+                examples=[
+                    OpenApiExample(
+                        "Invalid Token",
+                        value={"message": "Invalid or expired token: <error_message>"}
+                    ),
+                    OpenApiExample(
+                        "Missing Email",
+                        value={"message": "Email is required."}
+                    ),
+                    OpenApiExample(
+                        "Invalid Issuer",
+                        value={"message": "Invalid token issuer."}
+                    ),
+                ]
+            ),
+        },
+        parameters=[
+            OpenApiParameter(
+                name="credential",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Google ID token.",
+            ),
+            OpenApiParameter(
+                name="clientId",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Client ID for verification.",
+            ),
+        ],
+        description="Handles user authentication using Google ID token.",
+        summary="Authenticate user with Google ID token",
+    )
     def post(self, request):
         token = request.data.get("credential")
         client_id = request.data.get("clientId")
@@ -123,6 +180,18 @@ class VerifyEmailView(APIView):
 
     permission_classes = (AllowAny,)
 
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(
+                description="Email successfully verified.",
+            ),
+            400: OpenApiResponse(
+                description="Invalid or expired token.",
+            ),
+        },
+        description="Verify user email using a token.",
+        summary="Verify email address",
+    )
     def get(self, request, token):
         try:
             # Find user by checking token validity for all users
@@ -146,6 +215,31 @@ class VerifyEmailView(APIView):
 class PasswordResetView(APIView):
     permission_classes = (AllowAny,)
 
+    @extend_schema(
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'email': {
+                        'type': 'string',
+                        'description': 'The email address to send the password reset link.',
+                        'example': 'user@example.com'
+                    }
+                },
+                'required': ['email'],
+            }
+        },
+        responses={
+            200: OpenApiResponse(
+                description="Email sent successfully.",
+            ),
+            400: OpenApiResponse(
+                description="User with this email does not exist or invalid input.",
+            ),
+        },
+        description="Initiate a password reset process by sending a reset email to the provided email address.",
+        summary="Initiate password reset",
+    )
     def post(self, request):
         email = request.data.get("email")
         if not email:
@@ -170,6 +264,31 @@ class ResendVerificationEmailView(APIView):
 
     permission_classes = (AllowAny,)
 
+    @extend_schema(
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'email': {
+                        'type': 'string',
+                        'description': 'The email address to resend the verification link.',
+                        'example': 'user@example.com'
+                    }
+                },
+                'required': ['email'],
+            }
+        },
+        responses={
+            200: OpenApiResponse(
+                description='Verification email resent successfully.',
+            ),
+            400: OpenApiResponse(
+                description='Invalid or expired token.',
+            ),
+        },
+        description='Resend the email verification link to the provided email address.',
+        summary='Resend email verification',
+    )
     def post(self, request):
         email = request.data.get("email")
         if not email:
@@ -189,6 +308,45 @@ class ResendVerificationEmailView(APIView):
 class PasswordResetConfirmView(APIView):
     permission_classes = (AllowAny,)
 
+    @extend_schema(
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'new_password': {
+                        'type': 'string',
+                        'description': 'The new password to set for the user. Should be at least 8 characters long and include a combination of letters, numbers, and special characters.',
+                        'example': 'newPassword123!'
+                    },
+                    'confirm_password': {
+                        'type': 'string',
+                        'description': 'Confirmation of the new password. Must match the new_password field.',
+                        'example': 'newPassword123!'
+                    },
+                },
+                'required': ['new_password', 'confirm_password'],
+            }
+        },
+        responses={
+            200: OpenApiResponse(
+                description="Password reset successfully.",
+            ),
+            400: OpenApiResponse(
+                description="Invalid or expired token.",
+            ),
+            400: OpenApiResponse(
+                description="UID and token are required.",
+            ),
+            400: OpenApiResponse(
+                description="Passwords do not match.",
+            ),
+            400: OpenApiResponse(
+                description="Invalid UID.",
+            ),
+        },
+        description="Reset the user password after verifying the token and UID. The new password must meet the security requirements and match the confirmation.",
+        summary="Confirm password reset",
+    )
     def post(self, request, token, uidb64):
         new_password = request.data.get("new_password")
         confirm_password = request.data.get("confirm_password")
@@ -220,6 +378,31 @@ class PasswordResetConfirmView(APIView):
 class LogoutView(APIView):
     permission_classes = (AllowAny,)
 
+    @extend_schema(
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'refresh': {
+                        'type': 'string',
+                        'description': 'Refresh token to invalidate.',
+                        'example': 'your_refresh_token_here'
+                    }
+                },
+                'required': ['refresh'],
+            }
+        },
+        responses={
+            200: OpenApiResponse(
+                description='Successfully logged out.',
+            ),
+            400: OpenApiResponse(
+                description='Invalid or expired refresh token.',
+            ),
+        },
+        description='Invalidate the provided refresh token to log out the user.',
+        summary='User logout',
+    )
     def post(self, request):
         try:
             refresh_token = request.data.get("refresh")
