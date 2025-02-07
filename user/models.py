@@ -52,6 +52,7 @@ def image_file_path(instance, filename):
 
 
 class User(AbstractUser):
+    #add first and last name
     username = None
     email = models.EmailField(_("email address"), unique=True)
     is_email_verified = models.BooleanField(default=False)
@@ -61,3 +62,5 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+
+    #add property full name
