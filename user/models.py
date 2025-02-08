@@ -20,7 +20,10 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError("The given email must be set")
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        user = self.model(
+            email=email,
+            **extra_fields
+        )
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -52,7 +55,8 @@ def image_file_path(instance, filename):
 
 
 class User(AbstractUser):
-    #add first and last name
+    first_name = models.CharField(max_length=55, blank=True)
+    last_name = models.CharField(max_length=55, blank=True)
     username = None
     email = models.EmailField(_("email address"), unique=True)
     is_email_verified = models.BooleanField(default=False)
@@ -63,4 +67,7 @@ class User(AbstractUser):
 
     objects = UserManager()
 
-    #add property full name
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
