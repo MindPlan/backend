@@ -4,6 +4,21 @@ from rest_framework.exceptions import ValidationError
 from MindPlan.settings import AUTH_USER_MODEL
 
 
+class TaskGroup(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    owner = models.ForeignKey(
+        AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="group",
+    )
+
+    class Meta:
+        unique_together = ("owner", "name")
+
+    def __str__(self):
+        return f"{self.name}"
+
+
 class Task(models.Model):
 
     class Priority(models.TextChoices):
@@ -11,22 +26,21 @@ class Task(models.Model):
         MEDIUM = "MEDIUM", "Medium"
         HIGH = "HIGH", "High"
 
-    class Status(models.TextChoices):
-        TO_DO = "TD", "To do"
-        IN_PROGRESS = "IP", "In progress"
-        DONE = "D", "Done"
-
     title = models.CharField(max_length=100, blank=False, null=False)
     description = models.TextField(max_length=255, blank=True, null=True)
     priority = models.CharField(
         max_length=10, choices=Priority.choices, default=Priority.LOW
     )
-    status = models.CharField(
-        max_length=15, choices=Status.choices, default=Status.TO_DO
+    group = models.ForeignKey(
+        TaskGroup,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tasks",
     )
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
-    group = models.ManyToManyField("Group", related_name="tasks", blank=True,)
+    tag = models.ManyToManyField("Tag", related_name="tasks", blank=True,)
     member = models.ForeignKey(
         AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -47,10 +61,10 @@ class Task(models.Model):
         """
         Check if a group is owned by an owner.
         """
-        if not isinstance(group, Group):
+        if not isinstance(group, Tag):
             try:
-                group = Group.objects.get(id=group)
-            except Group.DoesNotExist:
+                group = Tag.objects.get(id=group)
+            except Tag.DoesNotExist:
                 raise error_to_raise({"group": f"Group with ID {group} does not exist."})
 
         if group.owner != owner:
@@ -72,8 +86,12 @@ class Task(models.Model):
     def save(self, *args, **kwargs):
         if not self.pk and not self.owner:
             self.owner = kwargs.pop("owner", None)
-        self.clean()
 
+        if not self.pk and not self.group:
+            default_status = TaskGroup.objects.filter(owner=self.owner, name="To Do").first()
+            self.status = default_status if default_status else None
+
+        self.clean()
         super().save(*args, **kwargs)
 
     @property
@@ -102,7 +120,7 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
-class Group(models.Model):
+class Tag(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(max_length=500, blank=True, null=True)
     owner = models.ForeignKey(

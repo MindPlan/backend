@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import Task, Group
+from .models import Task, Tag, TaskGroup
 
 
 admin.site.register(Task)
-admin.site.register(Group)
+admin.site.register(Tag)
+admin.site.register(TaskGroup)

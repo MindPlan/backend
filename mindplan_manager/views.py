@@ -1,8 +1,27 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
-from mindplan_manager.models import Group, Task
-from mindplan_manager.serializers import TaskSerializer, GroupSerializer
+from mindplan_manager.models import (
+    Tag,
+    Task,
+    TaskGroup
+)
+from mindplan_manager.serializers import (
+    TaskSerializer,
+    TagSerializer,
+    TaskGroupSerializer
+)
+
+
+class TaskGroupViewSet(ModelViewSet):
+    serializer_class = TaskGroupSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        return TaskGroup.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class TaskViewSet(
@@ -19,15 +38,15 @@ class TaskViewSet(
         serializer.save(owner=self.request.user)
 
 
-class GroupViewSet(
+class TagViewSet(
     ModelViewSet,
 ):
-    serializer_class = GroupSerializer
-    queryset = Group.objects.all()
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        return Group.objects.filter(owner=self.request.user)
+        return Tag.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
