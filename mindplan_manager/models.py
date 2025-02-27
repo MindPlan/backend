@@ -5,7 +5,7 @@ from MindPlan.settings import AUTH_USER_MODEL
 
 
 class TaskGroup(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     owner = models.ForeignKey(
         AUTH_USER_MODEL,
         on_delete=models.CASCADE,
