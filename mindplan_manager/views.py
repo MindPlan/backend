@@ -44,9 +44,3 @@ class TagViewSet(
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     permission_classes = (IsAuthenticated,)
-
-    def get_queryset(self):
-        return Tag.objects.filter(owner=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)

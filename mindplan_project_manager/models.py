@@ -28,8 +28,8 @@
 #     #     super().clean()
 #     #     if not self.name.strip():
 #     #         raise ValidationError({"name": "Name cannot be empty or whitespace."})
-#
-#
+# #
+# #
 # class TasksProject(models.Model):
 #
 #     class Priority(models.TextChoices):
@@ -115,3 +115,18 @@
 #
 #     def is_moderator(self):
 #         return self.role == self.Role.MODERATOR
+#
+# class Comment(models.Model):
+#     task = models.ForeignKey(
+#         TasksProject,
+#         on_delete=models.CASCADE,
+#         related_name="comments"
+#     )
+#     text = models.TextField(max_length=500, blank=False, null=False)
+#     member = models.ForeignKey(
+#         AUTH_USER_MODEL,
+#         on_delete=models.SET_NULL,
+#         related_name="comments",
+#         null=True
+#     )
+#     created_at = models.DateTimeField(auto_now_add=True)

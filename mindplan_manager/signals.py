@@ -7,6 +7,7 @@ from .models import TaskGroup, AUTH_USER_MODEL
 def create_default_task_statuses(sender, instance, created, **kwargs):
     if created:
         TaskGroup.objects.bulk_create([
+            TaskGroup(name="Tasks", owner=instance, default_status=True),
             TaskGroup(name="To Do", owner=instance, default_status=True),
             TaskGroup(name="In Progress", owner=instance, default_status=True),
             TaskGroup(name="Done", owner=instance, default_status=True),

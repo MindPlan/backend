@@ -8,7 +8,7 @@ class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ("id", "name", "description", "owner")
+        fields = ("id", "name")
 
 
 class TaskGroupSerializer(serializers.ModelSerializer):
@@ -38,11 +38,10 @@ class TaskSerializer(serializers.ModelSerializer):
         owner = self.context["request"].user
         error_to_raise = ValidationError
 
-        tags = data.get("tag")
-
-        if tags:
-            for tag in tags:
-                Task.validate_group(owner, tag, error_to_raise)
+        group = data.get("group")
+        if not group:
+            group = TaskGroup.objects.filter(name="Tasks").first()
+        Task.validate_group(owner, group, error_to_raise)
 
         return data
 
@@ -62,5 +61,10 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context.get("request")
+        if not validated_data.get("group"):
+            default_group = TaskGroup.objects.filter(
+                owner=validated_data["owner"], name="Tasks"
+            ).first()
+            validated_data["group"] = default_group
         validated_data["owner"] = request.user if request else None
         return super().create(validated_data)

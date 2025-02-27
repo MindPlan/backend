@@ -11,6 +11,7 @@ class TaskGroup(models.Model):
         on_delete=models.CASCADE,
         related_name="group",
     )
+    default_status = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ("owner", "name")
@@ -61,10 +62,10 @@ class Task(models.Model):
         """
         Check if a group is owned by an owner.
         """
-        if not isinstance(group, Tag):
+        if not isinstance(group, TaskGroup):
             try:
-                group = Tag.objects.get(id=group)
-            except Tag.DoesNotExist:
+                group = TaskGroup.objects.get(id=group)
+            except TaskGroup.DoesNotExist:
                 raise error_to_raise({"group": f"Group with ID {group} does not exist."})
 
         if group.owner != owner:
@@ -92,6 +93,7 @@ class Task(models.Model):
             self.status = default_status if default_status else None
 
         self.clean()
+
         super().save(*args, **kwargs)
 
     @property
@@ -104,31 +106,8 @@ class Task(models.Model):
             })
 
 
-class Comment(models.Model):
-    task = models.ForeignKey(
-        Task,
-        on_delete=models.CASCADE,
-        related_name="comments"
-    )
-    text = models.TextField(max_length=500, blank=False, null=False)
-    member = models.ForeignKey(
-        AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        related_name="comments",
-        null=True
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
 class Tag(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField(max_length=500, blank=True, null=True)
-    owner = models.ForeignKey(
-        AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        null=True,
-        editable=False
-    )
 
     def __str__(self):
-        return f"id:({self.id}) {self.name}. Owner id:({self.owner.id})"
+        return f"id:({self.id}) {self.name}"
