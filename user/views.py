@@ -1,3 +1,5 @@
+import os
+
 import requests
 
 
@@ -20,7 +22,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 
-from user import settings
 from user.models import User
 from user.permissions import IsEmailVerified
 from user.serializers import UserSerializer
@@ -106,7 +107,7 @@ class GoogleView(APIView):
     )
     def post(self, request):
         token = request.data.get("credential")
-        client_id = settings.GOOGLE_CLIENT_ID
+        client_id = os.environ.get("CLIENT_ID")
 
         if not token or not client_id:
             return Response({"message": "Token and clientId are required."}, status=HTTP_400_BAD_REQUEST)
