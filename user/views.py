@@ -1,3 +1,5 @@
+import os
+
 import requests
 
 
@@ -105,7 +107,8 @@ class GoogleView(APIView):
     )
     def post(self, request):
         token = request.data.get("credential")
-        client_id = request.data.get("clientId")
+        client_id = os.environ.get("CLIENT_ID")
+
         if not token or not client_id:
             return Response({"message": "Token and clientId are required."}, status=HTTP_400_BAD_REQUEST)
 
